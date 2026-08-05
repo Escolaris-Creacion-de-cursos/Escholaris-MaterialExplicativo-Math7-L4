@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Material Explicativo · Una línea que comienza en cero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#132C46;
+    --turquesa:#1399BD;
+    --amarillo:#F8B93C;
+    --morado:#6862A9;
+    --verde:#82B94B;
+    --coral:#EE7057;
+    --blanco:#FFFFFF;
+    --tinta:#20283a;
+    --lavanda:#f2f0f8;
+    --linea:#ded9ec;
+    --sombra:0 14px 34px rgba(104,98,169,.16);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Montserrat',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--tinta);
+    background:
+      radial-gradient(1200px 400px at 15% -10%, rgba(238,112,87,.06), transparent 60%),
+      var(--lavanda);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .lienzo{max-width:940px;margin:0 auto;padding:18px 16px 30px;}
+  .marco{
+    background:var(--blanco);
+    border-radius:22px;
+    box-shadow:var(--sombra);
+    overflow:hidden;
+    border:1px solid var(--linea);
+  }
+  /* ===== Encabezado: tablero con cuadrícula ===== */
+  .cabecera{
+    position:relative;
+    background:linear-gradient(135deg,var(--morado) 0%,#3f3a6e 55%,var(--navy) 100%);
+    color:var(--blanco);
+    padding:22px 26px 20px;
+    overflow:hidden;
+  }
+  .cabecera::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);
+    background-size:34px 34px;
+    -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.9),transparent 90%);
+    mask-image:linear-gradient(180deg,rgba(0,0,0,.9),transparent 90%);
+    pointer-events:none;
+  }
+  .cabecera > *{position:relative;}
+  .kicker{
+    font-family:'Poppins',sans-serif;font-weight:600;
+    letter-spacing:.16em;text-transform:uppercase;font-size:.66rem;
+    color:var(--amarillo);margin:0 0 6px;
+  }
+  .cabecera h1{
+    font-family:'Poppins',sans-serif;font-weight:700;
+    font-size:1.5rem;margin:0;line-height:1.18;letter-spacing:-.01em;
+  }
+  .cabecera p{margin:9px 0 0;color:#ddd7f2;font-size:.92rem;max-width:62ch;}
+  /* ===== Ruta de progreso (la línea que comienza en cero) ===== */
+  .ruta{
+    padding:16px 26px 14px;
+    background:linear-gradient(180deg,#faf9fe,#f4f2fb);
+    border-bottom:1px solid var(--linea);
+  }
+  .ruta-pista{
+    position:relative;height:34px;margin:2px 6px 0;
+  }
+  .ruta-base,.ruta-fill{
+    position:absolute;top:15px;height:4px;border-radius:99px;
+  }
+  .ruta-base{left:0;right:0;background:var(--linea);}
+  .ruta-fill{left:0;width:0;background:linear-gradient(90deg,var(--coral),var(--amarillo));transition:width .4s ease;}
+  .paradas{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;}
+  .parada{
+    position:relative;width:26px;height:26px;border-radius:50%;
+    border:2px solid var(--linea);background:var(--blanco);
+    color:#9a93b8;font-family:'Poppins',sans-serif;font-weight:700;font-size:.72rem;
+    cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;
+    transition:transform .2s ease,border-color .2s ease,color .2s ease,background .2s ease;
+  }
+  .parada:hover{transform:scale(1.12);border-color:var(--coral);color:var(--coral);}
+  .parada.visto{border-color:var(--verde);color:var(--verde);background:#f4faec;}
+  .parada.activa{
+    border-color:var(--coral);background:var(--coral);color:var(--blanco);
+    transform:scale(1.28);box-shadow:0 4px 12px rgba(238,112,87,.4);
+  }
+  .parada:focus-visible{outline:3px solid var(--morado);outline-offset:3px;}
+  .ruta-pie{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:12px;font-size:.78rem;
+  }
+  .ruta-inicio{font-family:'Poppins',sans-serif;font-weight:700;color:var(--coral);letter-spacing:.04em;}
+  .ruta-cuenta{font-family:'Poppins',sans-serif;font-weight:600;color:var(--morado);}
+  /* ===== Escenas ===== */
+  .escenario{padding:26px;}
+  .escena{display:none;animation:entra .45s ease both;}
+  .escena.activa{display:block;}
+  @keyframes entra{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+  .rejilla{display:grid;grid-template-columns:1.02fr .98fr;gap:26px;align-items:center;}
+  .rejilla.ancha{grid-template-columns:1fr;}
+  .paso-tag{
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:'Poppins',sans-serif;font-weight:600;font-size:.68rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--morado);
+    background:rgba(104,98,169,.1);padding:6px 13px;border-radius:999px;margin-bottom:13px;
+  }
+  .paso-tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--coral);}
+  .escena h2{
+    font-family:'Poppins',sans-serif;font-weight:700;color:var(--navy);
+    font-size:1.36rem;margin:0 0 12px;line-height:1.2;letter-spacing:-.01em;
+  }
+  .escena p{margin:0 0 12px;font-size:.98rem;}
+  .escena .destacado{color:var(--morado);font-weight:600;}
+  .eq{
+    font-family:'Poppins',sans-serif;font-weight:700;color:var(--navy);
+    background:linear-gradient(180deg,#fff,#f6f4fd);
+    border:1px solid var(--linea);border-radius:12px;
+    padding:6px 12px;display:inline-block;letter-spacing:.02em;
+  }
+  /* ===== Panel de diagrama ===== */
+  .panel{
+    background:linear-gradient(180deg,#fbfaff,#f5f3fc);
+    border:1px solid var(--linea);border-radius:18px;padding:16px;
+    display:flex;flex-direction:column;gap:12px;min-height:290px;justify-content:center;
+  }
+  .panel svg{width:100%;height:auto;display:block;}
+  .alttxt{font-size:.78rem;color:#6a6390;border-top:1px dashed var(--linea);padding-top:9px;margin:0;}
+  /* ===== Reveladores por pasos ===== */
+  .capa{opacity:0;transition:opacity .5s ease;}
+  .capa.on{opacity:1;}
+  .lista-idea{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:9px;}
+  .lista-idea li{
+    display:flex;gap:11px;align-items:flex-start;font-size:.93rem;
+    padding:10px 13px;border-radius:12px;background:var(--lavanda);
+    border-left:4px solid var(--morado);
+    opacity:0;transform:translateX(-8px);
+    transition:opacity .4s ease,transform .4s ease;
+  }
+  .lista-idea li.on{opacity:1;transform:none;}
+  .lista-idea .marca{
+    font-family:'Poppins',sans-serif;font-weight:700;color:var(--coral);
+    background:var(--blanco);border:2px solid var(--coral);border-radius:8px;
+    min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+    font-size:.8rem;flex-shrink:0;
+  }
+  .btn-revelar{
+    align-self:flex-start;font-family:'Poppins',sans-serif;font-weight:600;font-size:.85rem;
+    background:var(--coral);color:var(--blanco);border:none;border-radius:11px;
+    padding:10px 17px;cursor:pointer;margin-top:6px;
+    transition:filter .2s ease,transform .1s ease;
+  }
+  .btn-revelar:hover{filter:brightness(1.05);}
+  .btn-revelar:active{transform:translateY(1px);}
+  .btn-revelar:disabled{opacity:.5;cursor:default;background:var(--verde);}
+  .btn-revelar:focus-visible{outline:3px solid var(--morado);outline-offset:2px;}
+  /* ===== Pregunta central (intro) ===== */
+  .pregunta{
+    background:linear-gradient(135deg,var(--coral) 0%,#e2543f 100%);
+    color:var(--blanco);border-radius:16px;padding:18px 20px;
+    font-family:'Poppins',sans-serif;font-weight:600;font-size:1.08rem;line-height:1.4;
+    box-shadow:0 10px 24px rgba(238,112,87,.3);
+  }
+  .pregunta b{color:var(--amarillo);font-weight:700;}
+  /* ===== En pocas palabras ===== */
+  .resumen{
+    margin-top:16px;background:rgba(248,185,60,.14);
+    border:1px solid rgba(248,185,60,.5);border-radius:14px;padding:13px 16px;
+  }
+  .resumen strong{
+    display:flex;align-items:center;gap:8px;
+    font-family:'Poppins',sans-serif;color:var(--navy);font-size:.92rem;margin-bottom:4px;
+  }
+  .resumen strong::before{content:"◆";color:var(--amarillo);}
+  .resumen p{margin:0;font-size:.9rem;}
+  /* ===== Opciones de decisión (elegir gráfica / sí-no) ===== */
+  .decision{margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .opcion{
+    background:var(--blanco);border:2px solid var(--linea);border-radius:14px;
+    padding:12px;cursor:pointer;text-align:center;font-family:'Montserrat',sans-serif;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    transition:border-color .2s ease,box-shadow .2s ease,transform .1s ease;
+  }
+  .opcion:hover{border-color:var(--morado);box-shadow:0 6px 16px rgba(104,98,169,.16);}
+  .opcion:active{transform:translateY(1px);}
+  .opcion:focus-visible{outline:3px solid var(--amarillo);outline-offset:2px;}
+  .opcion svg{width:100%;max-width:150px;height:auto;}
+  .opcion .rotulo{font-weight:600;color:var(--navy);font-size:.9rem;}
+  .opcion .fallo,.opcion .acierto{
+    display:none;font-size:.85rem;line-height:1.4;padding-top:6px;
+    border-top:1px dashed var(--linea);width:100%;
+  }
+  .opcion.resuelta{cursor:default;}
+  .opcion.resuelta.mal{border-color:var(--coral);background:#fff5f2;}
+  .opcion.resuelta.bien{border-color:var(--verde);background:#f5faec;}
+  .opcion.resuelta.mal .fallo{display:block;color:#c14a34;}
+  .opcion.resuelta.bien .acierto{display:block;color:#4f7d28;}
+  .sello{
+    font-family:'Poppins',sans-serif;font-weight:700;font-size:.74rem;
+    text-transform:uppercase;letter-spacing:.05em;display:none;
+    align-items:center;gap:5px;
+  }
+  .opcion.resuelta.mal .sello.s-mal{display:inline-flex;color:var(--coral);}
+  .opcion.resuelta.bien .sello.s-bien{display:inline-flex;color:var(--verde);}
+  /* ===== SIMULADOR ===== */
+  .sim{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:stretch;}
+  .sim-plano{
+    background:linear-gradient(180deg,#fbfaff,#f4f2fc);
+    border:1px solid var(--linea);border-radius:18px;padding:14px;
+  }
+  .sim-plano svg{width:100%;height:auto;display:block;}
+  .sim-controles{display:flex;flex-direction:column;gap:14px;}
+  .ctrl-bloque{
+    background:var(--blanco);border:1px solid var(--linea);border-radius:14px;padding:13px 14px;
+  }
+  .ctrl-titulo{
+    font-family:'Poppins',sans-serif;font-weight:600;color:var(--navy);
+    font-size:.82rem;margin:0 0 9px;text-transform:uppercase;letter-spacing:.05em;
+  }
+  .tasas{display:flex;gap:8px;}
+  .chip-tasa{
+    flex:1;background:var(--lavanda);border:2px solid var(--linea);border-radius:11px;
+    padding:9px 4px;cursor:pointer;font-family:'Poppins',sans-serif;font-weight:700;
+    color:var(--morado);font-size:.95rem;line-height:1.1;
+    transition:border-color .2s ease,background .2s ease,transform .1s ease;
+  }
+  .chip-tasa small{display:block;font-family:'Montserrat',sans-serif;font-weight:500;font-size:.62rem;color:#8a83ac;}
+  .chip-tasa:hover{border-color:var(--morado);}
+  .chip-tasa:active{transform:translateY(1px);}
+  .chip-tasa:focus-visible{outline:3px solid var(--amarillo);outline-offset:2px;}
+  .chip-tasa.sel{background:var(--morado);border-color:var(--morado);color:var(--blanco);}
+  .chip-tasa.sel small{color:#e5e2f5;}
+  .tiempo-fila{display:flex;align-items:center;gap:10px;}
+  .btn-paso{
+    width:44px;height:44px;border-radius:12px;border:2px solid var(--coral);
+    background:var(--blanco);color:var(--coral);font-family:'Poppins',sans-serif;
+    font-weight:700;font-size:1.3rem;cursor:pointer;line-height:1;
+    transition:background .2s ease,color .2s ease,transform .1s ease;
+  }
+  .btn-paso:hover:not(:disabled){background:var(--coral);color:var(--blanco);}
+  .btn-paso:active:not(:disabled){transform:translateY(1px);}
+  .btn-paso:disabled{opacity:.35;cursor:default;}
+  .btn-paso:focus-visible{outline:3px solid var(--morado);outline-offset:2px;}
+  .tiempo-val{
+    flex:1;text-align:center;font-family:'Poppins',sans-serif;font-weight:700;
+    color:var(--navy);font-size:1.15rem;
+  }
+  .tiempo-val small{display:block;font-family:'Montserrat',sans-serif;font-weight:500;font-size:.66rem;color:#8a83ac;letter-spacing:.04em;}
+  .lectura{
+    background:linear-gradient(135deg,var(--navy),#1c3a5c);color:var(--blanco);
+    border-radius:14px;padding:14px 15px;
+  }
+  .lectura .punto-vivo{
+    font-family:'Poppins',sans-serif;font-weight:700;font-size:1.28rem;color:var(--amarillo);
+    letter-spacing:.02em;
+  }
+  .lectura .cuenta{margin:6px 0 0;font-size:.86rem;color:#cfe0ef;font-family:'Montserrat',sans-serif;}
+  .lectura .cuenta b{color:var(--blanco);}
+  .sim-nota{
+    font-size:.82rem;color:#6a6390;background:rgba(104,98,169,.08);
+    border-radius:10px;padding:9px 12px;margin:0;
+  }
+  /* ===== Punto de una unidad: comparador ===== */
+  .comparador{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;}
+  .comp-chip{
+    flex:1;min-width:96px;background:var(--blanco);border:2px solid var(--linea);border-radius:13px;
+    padding:11px 8px;cursor:pointer;text-align:center;font-family:'Poppins',sans-serif;font-weight:700;
+    color:var(--navy);font-size:.9rem;transition:border-color .2s ease,transform .1s ease,box-shadow .2s;
+  }
+  .comp-chip small{display:block;font-family:'Montserrat',sans-serif;font-weight:500;font-size:.68rem;color:#8a83ac;margin-top:2px;}
+  .comp-chip:hover{border-color:var(--turquesa);box-shadow:0 5px 14px rgba(19,153,189,.14);}
+  .comp-chip:active{transform:translateY(1px);}
+  .comp-chip:focus-visible{outline:3px solid var(--amarillo);outline-offset:2px;}
+  .comp-chip.sel{border-color:var(--turquesa);background:#eef8fb;}
+  /* ===== Tarjetas de veredicto (cierre) ===== */
+  .tarjetas{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;}
+  .tarjeta{
+    background:var(--blanco);border:2px solid var(--linea);border-radius:14px;padding:14px;
+    text-align:left;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:.9rem;
+    color:var(--tinta);min-height:120px;display:flex;flex-direction:column;gap:7px;
+    transition:border-color .2s ease,box-shadow .2s ease,transform .1s ease;
+  }
+  .tarjeta:hover{border-color:var(--morado);box-shadow:0 6px 16px rgba(104,98,169,.16);}
+  .tarjeta:active{transform:translateY(1px);}
+  .tarjeta:focus-visible{outline:3px solid var(--amarillo);outline-offset:2px;}
+  .tarjeta .frente{font-weight:600;color:var(--navy);}
+  .tarjeta .reverso{display:none;font-size:.86rem;}
+  .tarjeta.abierta{cursor:default;}
+  .tarjeta.abierta .frente{color:var(--tinta);font-weight:500;}
+  .tarjeta.abierta .reverso{display:block;}
+  .tarjeta.abierta.falta{border-color:var(--coral);background:#fff5f2;}
+  .tarjeta.abierta.completa{border-color:var(--verde);background:#f5faec;}
+  .tarjeta .veredicto{
+    font-family:'Poppins',sans-serif;font-weight:700;font-size:.76rem;
+    text-transform:uppercase;letter-spacing:.05em;display:none;align-items:center;gap:6px;
+  }
+  .tarjeta.abierta .veredicto{display:inline-flex;}
+  .tarjeta.abierta.falta .veredicto{color:var(--coral);}
+  .tarjeta.abierta.completa .veredicto{color:var(--verde);}
+  .ic{width:17px;height:17px;flex-shrink:0;}
+  /* ===== Navegación inferior ===== */
+  .navegacion{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px 26px;border-top:1px solid var(--linea);
+    background:linear-gradient(180deg,#faf9fe,#f4f2fb);
+  }
+  .btn-nav{
+    font-family:'Poppins',sans-serif;font-weight:600;font-size:.9rem;border:none;border-radius:12px;
+    padding:11px 20px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+    transition:filter .2s ease,transform .1s ease,opacity .2s ease;
+  }
+  .btn-nav.prev{background:var(--blanco);color:var(--morado);border:1px solid var(--linea);}
+  .btn-nav.next{background:var(--coral);color:var(--blanco);}
+  .btn-nav:hover:not(:disabled){filter:brightness(1.04);}
+  .btn-nav:active:not(:disabled){transform:translateY(1px);}
+  .btn-nav:disabled{opacity:.4;cursor:default;}
+  .btn-nav:focus-visible{outline:3px solid var(--morado);outline-offset:2px;}
+  .btn-reset{
+    background:none;border:none;color:var(--morado);font-family:'Poppins',sans-serif;
+    font-weight:600;font-size:.82rem;cursor:pointer;text-decoration:underline;padding:6px;
+  }
+  .btn-reset:focus-visible{outline:3px solid var(--amarillo);outline-offset:2px;border-radius:6px;}
+  .btn-reset[hidden]{display:none;}
+  /* ===== Responsivo ===== */
+  @media (max-width:760px){
+    .rejilla{grid-template-columns:1fr;gap:18px;}
+    .panel{order:-1;min-height:auto;}
+    .sim{grid-template-columns:1fr;}
+    .cabecera h1{font-size:1.24rem;}
+    .escena h2{font-size:1.18rem;}
+    .tarjetas,.decision{grid-template-columns:1fr;}
+    .parada{width:22px;height:22px;font-size:.66rem;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+    .capa{opacity:1;}
+    .lista-idea li{opacity:1;transform:none;}
+  }
+</style>
+</head>
+<body>
+<div class="lienzo">
+  <div class="marco">
+    <header class="cabecera">
+      <p class="kicker">Material Explicativo · 10 min</p>
+      <h1>Una línea que comienza en cero</h1>
+      <p>Cada relación proporcional es un viaje que arranca en el mismo lugar: el origen. Avanza parada por parada y usa el simulador para ver cómo la tasa dibuja la línea.</p>
+    </header>
+
+    <!-- RUTA DE PROGRESO -->
+    <div class="ruta">
+      <div class="ruta-pista">
+        <div class="ruta-base"></div>
+        <div class="ruta-fill" id="rutaFill"></div>
+        <div class="paradas" id="paradas" role="tablist" aria-label="Paradas del recorrido"></div>
+      </div>
+      <div class="ruta-pie">
+        <span class="ruta-inicio">◐ Salida: (0, 0)</span>
+        <span class="ruta-cuenta" id="cuenta">Parada 1 de 7</span>
+      </div>
+    </div>
+
+    <div class="escenario" id="escenario">
+
+      <!-- ===== ESCENA 1 ===== -->
+      <section class="escena activa" data-escena="0" aria-label="Parada 1">
+        <span class="paso-tag">La salida</span>
+        <div class="rejilla">
+          <div>
+            <h2>Toda proporción parte del origen</h2>
+            <p>Si caminas a ritmo constante, en cero horas recorres cero kilómetros. Por eso la gráfica de una relación proporcional siempre <span class="destacado">pasa por el punto (0, 0)</span>.</p>
+            <p>Ese detalle no es un adorno: es la señal que distingue una relación proporcional de otra que no lo es.</p>
+            <div class="pregunta">
+              La pregunta del recorrido: <b>¿qué hace que una línea represente una relación proporcional?</b>
+            </div>
+          </div>
+          <div>
+            <p style="font-size:.92rem;color:#4a4470;margin:0 0 10px;">Decide primero: de estas dos líneas, ¿cuál representa una relación proporcional? Toca la que creas correcta.</p>
+            <div class="decision" id="decisionIntro">
+              <button class="opcion" data-correcta="no" aria-label="Gráfica que no pasa por el origen">
+                <svg viewBox="0 0 160 130" role="img" aria-label="Una línea recta que cruza el eje vertical por encima de cero">
+                  <line x1="24" y1="14" x2="24" y2="112" stroke="#c7c1dd" stroke-width="2"/>
+                  <line x1="24" y1="112" x2="150" y2="112" stroke="#c7c1dd" stroke-width="2"/>
+                  <line x1="24" y1="78" x2="140" y2="26" stroke="var(--coral)" stroke-width="4" stroke-linecap="round"/>
+                  <circle cx="24" cy="78" r="5" fill="var(--coral)"/>
+                  <text x="15" y="76" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:11px;fill:#8a83ac;">sale de aquí</text>
+                </svg>
+                <span class="rotulo">Empieza más arriba del cero</span>
+                <span class="sello s-mal">✕ No proporcional</span>
+                <span class="sello s-bien">✓ Proporcional</span>
+                <span class="fallo">Esta línea corta el eje vertical <strong>por encima de (0, 0)</strong>. En cero horas ya marca distancia, así que no es proporcional.</span>
+                <span class="acierto"></span>
+              </button>
+              <button class="opcion" data-correcta="si" aria-label="Gráfica que pasa por el origen">
+                <svg viewBox="0 0 160 130" role="img" aria-label="Una línea recta que parte exactamente del origen">
+                  <line x1="24" y1="14" x2="24" y2="112" stroke="#c7c1dd" stroke-width="2"/>
+                  <line x1="24" y1="112" x2="150" y2="112" stroke="#c7c1dd" stroke-width="2"/>
+                  <line x1="24" y1="112" x2="140" y2="30" stroke="var(--verde)" stroke-width="4" stroke-linecap="round"/>
+                  <circle cx="24" cy="112" r="5" fill="var(--verde)"/>
+                  <text x="15" y="110" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:11px;fill:#4f7d28;">(0, 0)</text>
+                </svg>
+                <span class="rotulo">Arranca justo en el cero</span>
+                <span class="sello s-mal">✕ No proporcional</span>
+                <span class="sello s-bien">✓ Proporcional</span>
+                <span class="fallo"></span>
+                <span class="acierto">Correcto. Parte exactamente de <strong>(0, 0)</strong>: cero entrada produce cero salida. Esa es la condición de una relación proporcional.</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ESCENA 2 ===== -->
+      <section class="escena" data-escena="1" aria-label="Parada 2" hidden>
+        <span class="paso-tag">La regla</span>
+        <div class="rejilla">
+          <div>
+            <h2>La ecuación y = kx</h2>
+            <p>Toda relación proporcional se escribe con la misma forma. Cada letra tiene un papel:</p>
+            <ul class="lista-idea" id="lista2">
+              <li data-i="0"><span class="marca">y</span><span><strong>La salida.</strong> Lo que obtienes, como los kilómetros recorridos.</span></li>
+              <li data-i="1"><span class="marca">k</span><span><strong>La tasa constante.</strong> Cuánto crece la salida por cada unidad de entrada. No cambia en todo el viaje.</span></li>
+              <li data-i="2"><span class="marca">x</span><span><strong>La entrada.</strong> Lo que controlas, como las horas caminadas.</span></li>
+            </ul>
+            <button class="btn-revelar" data-target="2">Armar la ecuación paso a paso</button>
+            <div class="resumen">
+              <strong>En pocas palabras</strong>
+              <p>Si caminas a 4 km por hora, la regla es <b>d = 4t</b>: los kilómetros son 4 veces las horas. Aquí <b>k = 4</b>.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <svg viewBox="0 0 340 210" role="img" aria-labelledby="t2">
+              <title id="t2">La ecuación y igual a k por x, con cada letra explicada</title>
+              <g class="capa" data-c="0">
+                <rect x="118" y="70" width="42" height="52" rx="9" fill="rgba(19,153,189,.12)" stroke="var(--turquesa)" stroke-width="2"/>
+                <text x="139" y="106" text-anchor="middle" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:30px;fill:var(--turquesa);">y</text>
+                <text x="139" y="146" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:12px;fill:var(--turquesa);font-weight:600;">salida</text>
+                <text x="176" y="106" text-anchor="middle" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:26px;fill:var(--navy);">=</text>
+              </g>
+              <g class="capa" data-c="1">
+                <rect x="196" y="70" width="40" height="52" rx="9" fill="rgba(238,112,87,.14)" stroke="var(--coral)" stroke-width="2"/>
+                <text x="216" y="106" text-anchor="middle" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:30px;fill:var(--coral);">k</text>
+                <text x="216" y="146" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:12px;fill:var(--coral);font-weight:600;">tasa</text>
+              </g>
+              <g class="capa" data-c="2">
+                <rect x="240" y="70" width="42" height="52" rx="9" fill="rgba(104,98,169,.14)" stroke="var(--morado)" stroke-width="2"/>
+                <text x="261" y="106" text-anchor="middle" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:30px;fill:var(--morado);">x</text>
+                <text x="261" y="146" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:12px;fill:var(--morado);font-weight:600;">entrada</text>
+                <text x="200" y="184" text-anchor="middle" style="font-family:'Poppins',sans-serif;font-weight:600;font-size:15px;fill:var(--navy);">la tasa multiplica a la entrada</text>
+              </g>
+            </svg>
+            <p class="alttxt">La regla y = k·x: la salida es igual a la tasa constante multiplicada por la entrada.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ESCENA 3 ===== -->
+      <section class="escena" data-escena="2" aria-label="Parada 3" hidden>
+        <span class="paso-tag">El anclaje</span>
+        <div class="rejilla">
+          <div>
+            <h2>El origen (0, 0)</h2>
+            <p>Cuando la entrada es cero, la salida también es cero: <span class="eq">y = k · 0 = 0</span>.</p>
+            <p>Por eso el punto <span class="destacado">(0, 0)</span> pertenece a toda relación proporcional. Es el ancla desde donde sale la línea, sin importar cuál sea la tasa.</p>
+            <button class="btn-revelar" data-target="3">Anclar la línea en el origen</button>
+          </div>
+          <div class="panel">
+            <svg viewBox="0 0 340 240" role="img" aria-labelledby="t3">
+              <title id="t3">Tres líneas con distinta inclinación que salen todas del mismo origen</title>
+              <line x1="46" y1="20" x2="46" y2="206" stroke="#c7c1dd" stroke-width="2"/>
+              <line x1="46" y1="206" x2="316" y2="206" stroke="#c7c1dd" stroke-width="2"/>
+              <text x="40" y="214" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:11px;fill:#8a83ac;">0</text>
+              <g class="capa" data-c="0">
+                <line x1="46" y1="206" x2="300" y2="150" stroke="var(--turquesa)" stroke-width="4" stroke-linecap="round"/>
+              </g>
+              <g class="capa" data-c="1">
+                <line x1="46" y1="206" x2="300" y2="96" stroke="var(--morado)" stroke-width="4" stroke-linecap="round"/>
+              </g>
+              <g class="capa" data-c="2">
+                <line x1="46" y1="206" x2="270" y2="34" stroke="var(--coral)" stroke-width="4" stroke-linecap="round"/>
+              </g>
+              <g class="capa" data-c="3">
+                <circle cx="46" cy="206" r="9" fill="none" stroke="var(--amarillo)" stroke-width="3"/>
+                <circle cx="46" cy="206" r="5" fill="var(--navy)"/>
+                <text x="60" y="228" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;fill:var(--navy);">todas parten de (0, 0)</text>
+              </g>
+            </svg>
+            <p class="alttxt">Tres líneas de tasas distintas se abren en abanico, pero todas nacen exactamente en el origen (0, 0).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ESCENA 4: SIMULADOR ===== -->
+      <section class="escena" data-escena="3" aria-label="Parada 4" hidden>
+        <span class="paso-tag">Simulador</span>
+        <h2>La caminata sobre y = kx</h2>
+        <p style="max-width:70ch;">Elige un ritmo de caminata y avanza el reloj. Observa cómo el punto sube por la línea y siempre sale del origen. Antes de avanzar, intenta predecir: si duplicas las horas, ¿qué pasa con los kilómetros?</p>
+        <div class="sim">
+          <div class="sim-plano">
+            <svg viewBox="0 0 360 250" role="img" aria-labelledby="t4">
+              <title id="t4">Plano de tiempo y distancia con la línea y igual a k por x y un punto que avanza</title>
+              <!-- cuadrícula -->
+              <g stroke="#e7e3f3" stroke-width="1">
+                <line x1="104" y1="34" x2="104" y2="214"/><line x1="160" y1="34" x2="160" y2="214"/>
+                <line x1="216" y1="34" x2="216" y2="214"/><line x1="272" y1="34" x2="272" y2="214"/>
+                <line x1="328" y1="34" x2="328" y2="214"/>
+                <line x1="48" y1="178" x2="328" y2="178"/><line x1="48" y1="142" x2="328" y2="142"/>
+                <line x1="48" y1="106" x2="328" y2="106"/><line x1="48" y1="70" x2="328" y2="70"/>
+                <line x1="48" y1="34" x2="328" y2="34"/>
+              </g>
+              <!-- ejes -->
+              <line x1="48" y1="24" x2="48" y2="214" stroke="var(--navy)" stroke-width="2.5"/>
+              <line x1="48" y1="214" x2="340" y2="214" stroke="var(--navy)" stroke-width="2.5"/>
+              <path d="M48 24 l-5 9 h10 z" fill="var(--navy)"/>
+              <path d="M340 214 l-9 -5 v10 z" fill="var(--navy)"/>
+              <!-- etiquetas de eje -->
+              <text x="30" y="30" style="font-family:'Montserrat',sans-serif;font-size:11px;fill:var(--navy);font-weight:600;">km</text>
+              <text x="344" y="230" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:11px;fill:var(--navy);font-weight:600;">horas</text>
+              <!-- marcas eje x -->
+              <text x="48"  y="230" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">0</text>
+              <text x="104" y="230" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">1</text>
+              <text x="160" y="230" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">2</text>
+              <text x="216" y="230" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">3</text>
+              <text x="272" y="230" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">4</text>
+              <text x="328" y="230" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">5</text>
+              <!-- marcas eje y -->
+              <text x="42" y="218" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">0</text>
+              <text x="42" y="182" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">4</text>
+              <text x="42" y="146" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">8</text>
+              <text x="42" y="110" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">12</text>
+              <text x="42" y="74"  text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">16</text>
+              <text x="42" y="38"  text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">20</text>
+              <!-- guías al punto -->
+              <line id="guiaV" x1="48" y1="214" x2="48" y2="214" stroke="var(--amarillo)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <line id="guiaH" x1="48" y1="214" x2="48" y2="214" stroke="var(--amarillo)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <!-- la línea y=kx -->
+              <line id="rayo" x1="48" y1="214" x2="328" y2="34" stroke="var(--coral)" stroke-width="4" stroke-linecap="round"/>
+              <!-- punto de una unidad (1,k) -->
+              <circle id="unidad" cx="104" cy="178" r="5" fill="var(--morado)"/>
+              <!-- origen -->
+              <circle cx="48" cy="214" r="5" fill="var(--navy)"/>
+              <!-- viajero -->
+              <g id="viajero" transform="translate(48,214)">
+                <circle r="9" fill="var(--amarillo)" stroke="var(--navy)" stroke-width="2.5"/>
+              </g>
+            </svg>
+          </div>
+          <div class="sim-controles">
+            <div class="ctrl-bloque">
+              <p class="ctrl-titulo">1 · Ritmo (tasa k)</p>
+              <div class="tasas" id="tasas">
+                <button class="chip-tasa" data-k="2">2<small>km/h</small></button>
+                <button class="chip-tasa" data-k="3">3<small>km/h</small></button>
+                <button class="chip-tasa sel" data-k="4">4<small>km/h</small></button>
+              </div>
+            </div>
+            <div class="ctrl-bloque">
+              <p class="ctrl-titulo">2 · Reloj (horas x)</p>
+              <div class="tiempo-fila">
+                <button class="btn-paso" id="menosT" aria-label="Restar una hora">−</button>
+                <div class="tiempo-val"><span id="tHoras">0</span> h<small>tiempo caminado</small></div>
+                <button class="btn-paso" id="masT" aria-label="Sumar una hora">+</button>
+              </div>
+            </div>
+            <div class="lectura">
+              <div class="punto-vivo" id="puntoVivo">(0, 0)</div>
+              <p class="cuenta" id="cuentaVivo">En <b>0</b> horas caminaste <b>0</b> km.</p>
+            </div>
+            <p class="sim-nota">Cambia el ritmo y verás girar la línea, pero el origen (0, 0) nunca se mueve.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ESCENA 5 ===== -->
+      <section class="escena" data-escena="4" aria-label="Parada 5" hidden>
+        <span class="paso-tag">La huella de la tasa</span>
+        <div class="rejilla">
+          <div>
+            <h2>El punto de una unidad (1, r)</h2>
+            <p>El punto donde la entrada vale <span class="destacado">1</span> revela la tasa de un vistazo: su altura <em>es</em> la tasa. En <span class="eq">d = 4t</span>, el punto (1, 4) dice “4 km en una hora”.</p>
+            <p>Toca una tasa para ver dónde cae su punto de una unidad. A mayor tasa, más alto cae el punto.</p>
+            <div class="comparador" id="comparador">
+              <button class="comp-chip" data-k="2">y = 2x<small>toca para ver (1, 2)</small></button>
+              <button class="comp-chip sel" data-k="3">y = 3x<small>toca para ver (1, 3)</small></button>
+              <button class="comp-chip" data-k="5">y = 5x<small>toca para ver (1, 5)</small></button>
+            </div>
+          </div>
+          <div class="panel">
+            <svg viewBox="0 0 340 250" role="img" aria-labelledby="t5">
+              <title id="t5">Comparación del punto de una unidad para distintas tasas</title>
+              <g stroke="#e7e3f3" stroke-width="1">
+                <line x1="104" y1="30" x2="104" y2="210"/>
+                <line x1="48" y1="174" x2="320" y2="174"/><line x1="48" y1="138" x2="320" y2="138"/>
+                <line x1="48" y1="102" x2="320" y2="102"/><line x1="48" y1="66" x2="320" y2="66"/>
+              </g>
+              <line x1="48" y1="20" x2="48" y2="210" stroke="var(--navy)" stroke-width="2.5"/>
+              <line x1="48" y1="210" x2="320" y2="210" stroke="var(--navy)" stroke-width="2.5"/>
+              <text x="104" y="226" text-anchor="middle" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:12px;fill:var(--navy);">x = 1</text>
+              <text x="42" y="214" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:10px;fill:#8a83ac;">0</text>
+              <!-- línea dinámica y punto -->
+              <line id="rayo5" x1="48" y1="210" x2="320" y2="102" stroke="var(--turquesa)" stroke-width="4" stroke-linecap="round"/>
+              <line id="guia5" x1="104" y1="210" x2="104" y2="138" stroke="var(--amarillo)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <circle cx="48" cy="210" r="5" fill="var(--navy)"/>
+              <circle id="unidad5" cx="104" cy="138" r="7" fill="var(--turquesa)" stroke="var(--blanco)" stroke-width="2"/>
+              <text id="etq5" x="118" y="134" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;fill:var(--navy);">(1, 3)</text>
+            </svg>
+            <p class="alttxt">Sobre la vertical x = 1, el punto de una unidad sube más cuanto mayor es la tasa de la línea.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ESCENA 6 ===== -->
+      <section class="escena" data-escena="5" aria-label="Parada 6" hidden>
+        <span class="paso-tag">Prueba de un punto</span>
+        <div class="rejilla">
+          <div>
+            <h2>¿El punto pertenece a la línea?</h2>
+            <p>Para saber si un punto está sobre <span class="eq">d = 4t</span>, sustituye el tiempo y compara. Un punto pertenece solo si al reemplazar sale la misma distancia.</p>
+            <p><strong>Decide:</strong> ¿el punto <span class="destacado">(3, 12)</span> está sobre la línea d = 4t? Toca tu respuesta antes de ver la comprobación.</p>
+            <div class="decision" id="decisionPunto">
+              <button class="opcion" data-correcta="si" aria-label="Sí pertenece">
+                <span class="rotulo" style="font-size:1.05rem;">Sí, pertenece</span>
+                <span class="sello s-mal">✕ Revisa</span>
+                <span class="sello s-bien">✓ Correcto</span>
+                <span class="fallo"></span>
+                <span class="acierto">Bien. Sustituye t = 3: d = 4 × 3 = <strong>12</strong>. Coincide con el 12 del punto, así que (3, 12) sí está sobre la línea.</span>
+              </button>
+              <button class="opcion" data-correcta="no" aria-label="No pertenece">
+                <span class="rotulo" style="font-size:1.05rem;">No pertenece</span>
+                <span class="sello s-mal">✕ Revisa</span>
+                <span class="sello s-bien">✓ Correcto</span>
+                <span class="fallo">Sustituye t = 3 en d = 4t: da 4 × 3 = <strong>12</strong>, que es justo la segunda coordenada. Como coincide, el punto sí pertenece.</span>
+                <span class="acierto"></span>
+              </button>
+            </div>
+          </div>
+          <div class="panel">
+            <svg viewBox="0 0 340 230" role="img" aria-labelledby="t6">
+              <title id="t6">Comprobación de que el punto 3 coma 12 cae sobre la línea d igual a 4 t</title>
+              <line x1="46" y1="18" x2="46" y2="196" stroke="#c7c1dd" stroke-width="2"/>
+              <line x1="46" y1="196" x2="316" y2="196" stroke="#c7c1dd" stroke-width="2"/>
+              <line x1="46" y1="196" x2="286" y2="36" stroke="var(--coral)" stroke-width="4" stroke-linecap="round"/>
+              <text x="250" y="60" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;fill:var(--coral);">d = 4t</text>
+              <line x1="196" y1="196" x2="196" y2="116" stroke="var(--amarillo)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <line x1="46" y1="116" x2="196" y2="116" stroke="var(--amarillo)" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <circle cx="196" cy="116" r="8" fill="var(--verde)" stroke="var(--blanco)" stroke-width="2"/>
+              <text x="208" y="112" style="font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;fill:var(--navy);">(3, 12)</text>
+              <text x="196" y="214" text-anchor="middle" style="font-family:'Montserrat',sans-serif;font-size:11px;fill:#8a83ac;">t = 3</text>
+              <text x="34" y="120" text-anchor="end" style="font-family:'Montserrat',sans-serif;font-size:11px;fill:#8a83ac;">12</text>
+              <circle cx="46" cy="196" r="5" fill="var(--navy)"/>
+            </svg>
+            <p class="alttxt">Al subir desde t = 3 hasta la línea d = 4t se llega a 12 km: el punto (3, 12) queda justo sobre la línea.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== ESCENA 7 ===== -->
+      <section class="escena" data-escena="6" aria-label="Parada 7" hidden>
+        <span class="paso-tag">Comprueba las condiciones</span>
+        <div class="rejilla">
+          <div>
+            <h2>¿Es proporcional o no?</h2>
+            <p>Toca cada tarjeta para revelar si describe una relación proporcional o qué condición le falla. Recuerda la pregunta del recorrido: lo que decide es que la línea pase por (0, 0) con una tasa constante.</p>
+            <button class="btn-revelar" id="resetTarjetas" style="background:var(--blanco);color:var(--morado);border:1px solid var(--linea);">Volver a cerrar las tarjetas</button>
+          </div>
+          <div>
+            <div class="tarjetas" id="tarjetas">
+              <button class="tarjeta" data-veredicto="completa">
+                <span class="frente">“En cero horas, cero kilómetros; y sube 5 km cada hora.”</span>
+                <span class="veredicto"></span>
+                <span class="reverso">Proporcional: pasa por <strong>(0, 0)</strong> con tasa constante. Su ecuación es y = 5x.</span>
+              </button>
+              <button class="tarjeta" data-veredicto="falta">
+                <span class="frente">“La regla es y = 4x + 2.”</span>
+                <span class="veredicto"></span>
+                <span class="reverso">No proporcional: el <strong>+ 2</strong> hace que en x = 0 valga 2, no 0. La línea no pasa por el origen.</span>
+              </button>
+              <button class="tarjeta" data-veredicto="falta">
+                <span class="frente">“La gráfica de y = 4x comienza en (0, 4).”</span>
+                <span class="veredicto"></span>
+                <span class="reverso">Falso: en x = 0, y = 4 × 0 = <strong>0</strong>. Comienza en (0, 0). El 4 es la tasa, no el punto de inicio.</span>
+              </button>
+              <button class="tarjeta" data-veredicto="completa">
+                <span class="frente">“Pasa por (0, 0) y por (2, 9).”</span>
+                <span class="veredicto"></span>
+                <span class="reverso">Proporcional: la tasa es <strong>k = 9 ÷ 2 = 4.5</strong>, constante. Su ecuación es y = 4.5x.</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="navegacion">
+      <button class="btn-nav prev" id="btnPrev" aria-label="Parada anterior">← Anterior</button>
+      <button class="btn-reset" id="btnReset">Reiniciar esta parada</button>
+      <button class="btn-nav next" id="btnNext" aria-label="Parada siguiente">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var escenas = Array.prototype.slice.call(document.querySelectorAll('.escena'));
+  var total = escenas.length;
+  var actual = 0;
+  var paradasBox = document.getElementById('paradas');
+  var rutaFill = document.getElementById('rutaFill');
+  var cuenta = document.getElementById('cuenta');
+  var btnPrev = document.getElementById('btnPrev');
+  var btnNext = document.getElementById('btnNext');
+  var btnReset = document.getElementById('btnReset');
+  var vistas = {};
+
+  // Crear paradas de la ruta
+  var paradas = [];
+  for (var i=0;i<total;i++){
+    (function(idx){
+      var b = document.createElement('button');
+      b.className = 'parada';
+      b.textContent = (idx+1);
+      b.setAttribute('role','tab');
+      b.setAttribute('aria-label','Ir a la parada '+(idx+1));
+      b.addEventListener('click', function(){ ir(idx); });
+      paradasBox.appendChild(b);
+      paradas.push(b);
+    })(i);
+  }
+
+  function pintaRuta(){
+    paradas.forEach(function(p,idx){
+      p.classList.remove('activa','visto');
+      if (idx===actual) p.classList.add('activa');
+      else if (vistas[idx]) p.classList.add('visto');
+    });
+    var pct = total>1 ? (actual/(total-1))*100 : 0;
+    rutaFill.style.width = pct + '%';
+  }
+
+  // ¿La escena tiene algo reiniciable? (para ocultar el botón reset si no)
+  function tieneReiniciable(e){
+    return !!(e.querySelector('.capa, .lista-idea, .opcion, [data-veredicto], .sim'));
+  }
+
+  function ir(idx){
+    if (idx<0 || idx>=total) return;
+    escenas[actual].classList.remove('activa');
+    escenas[actual].setAttribute('hidden','');
+    actual = idx;
+    vistas[actual] = true;
+    var e = escenas[actual];
+    e.removeAttribute('hidden');
+    e.classList.add('activa');
+    cuenta.textContent = 'Parada '+(actual+1)+' de '+total;
+    btnPrev.disabled = (actual===0);
+    btnNext.disabled = (actual===total-1);
+    btnReset.hidden = !tieneReiniciable(e);
+    pintaRuta();
+  }
+
+  // ===== Reveladores paso a paso =====
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest('.btn-revelar[data-target]');
+    if (!btn) return;
+    var e = escenas[actual];
+    var capas = Array.prototype.slice.call(e.querySelectorAll('.capa'));
+    var items = Array.prototype.slice.call(e.querySelectorAll('.lista-idea li'));
+    var paso = parseInt(btn.dataset.paso||'0',10);
+    if (items[paso]) items[paso].classList.add('on');
+    if (capas[paso]) capas[paso].classList.add('on');
+    paso++;
+    btn.dataset.paso = paso;
+    var meta = Math.max(capas.length, items.length);
+    if (paso >= meta){
+      capas.forEach(function(c){c.classList.add('on');});
+      items.forEach(function(it){it.classList.add('on');});
+      btn.disabled = true;
+      btn.textContent = 'Listo ✓';
+    }
+  });
+
+  // ===== Opciones de decisión (elegir gráfica / sí-no) =====
+  Array.prototype.slice.call(document.querySelectorAll('.decision')).forEach(function(grupo){
+    var ops = Array.prototype.slice.call(grupo.querySelectorAll('.opcion'));
+    ops.forEach(function(op){
+      op.addEventListener('click', function(){
+        if (grupo.dataset.resuelto==='1') return;
+        var bien = op.dataset.correcta==='si';
+        op.classList.add('resuelta', bien?'bien':'mal');
+        if (!bien){
+          // marcar además la correcta como bien
+          ops.forEach(function(o){
+            if (o.dataset.correcta==='si'){ o.classList.add('resuelta','bien'); }
+          });
+        }
+        grupo.dataset.resuelto='1';
+      });
+    });
+  });
+
+  // ===== SIMULADOR (escena 4) =====
+  var OX=48, OY=214, PX=56, PY=9; // px por hora, px por km
+  function px(t){ return OX + PX*t; }
+  function py(d){ return OY - PY*d; }
+  var simK=4, simT=0;
+  var rayo=document.getElementById('rayo');
+  var viajero=document.getElementById('viajero');
+  var unidad=document.getElementById('unidad');
+  var guiaV=document.getElementById('guiaV');
+  var guiaH=document.getElementById('guiaH');
+  var puntoVivo=document.getElementById('puntoVivo');
+  var cuentaVivo=document.getElementById('cuentaVivo');
+  var tHoras=document.getElementById('tHoras');
+  var chipsTasa=Array.prototype.slice.call(document.querySelectorAll('#tasas .chip-tasa'));
+  var menosT=document.getElementById('menosT');
+  var masT=document.getElementById('masT');
+
+  function pintaSim(){
+    // línea y=kx hasta t=5
+    rayo.setAttribute('x2', px(5));
+    rayo.setAttribute('y2', py(5*simK));
+    // punto de una unidad
+    unidad.setAttribute('cx', px(1));
+    unidad.setAttribute('cy', py(simK));
+    // viajero
+    var d = simK*simT;
+    viajero.setAttribute('transform','translate('+px(simT)+','+py(d)+')');
+    // guías
+    guiaV.setAttribute('x1', px(simT)); guiaV.setAttribute('y1', OY);
+    guiaV.setAttribute('x2', px(simT)); guiaV.setAttribute('y2', py(d));
+    guiaH.setAttribute('x1', OX); guiaH.setAttribute('y1', py(d));
+    guiaH.setAttribute('x2', px(simT)); guiaH.setAttribute('y2', py(d));
+    // lectura
+    puntoVivo.textContent='('+simT+', '+d+')';
+    cuentaVivo.innerHTML='En <b>'+simT+'</b> '+(simT===1?'hora':'horas')+' caminaste <b>'+d+'</b> km.';
+    tHoras.textContent=simT;
+    menosT.disabled=(simT<=0);
+    masT.disabled=(simT>=5);
+    chipsTasa.forEach(function(c){ c.classList.toggle('sel', parseInt(c.dataset.k,10)===simK); });
+  }
+  chipsTasa.forEach(function(c){
+    c.addEventListener('click', function(){ simK=parseInt(c.dataset.k,10); pintaSim(); });
+  });
+  masT.addEventListener('click', function(){ if(simT<5){simT++; pintaSim();} });
+  menosT.addEventListener('click', function(){ if(simT>0){simT--; pintaSim();} });
+  pintaSim();
+
+  // ===== Comparador punto de una unidad (escena 5) =====
+  var OX5=48, OY5=210, PX5=56, PY5=18; // 1 unidad x = 56px ; 1 km = 18px (para k hasta 5)
+  var rayo5=document.getElementById('rayo5');
+  var unidad5=document.getElementById('unidad5');
+  var guia5=document.getElementById('guia5');
+  var etq5=document.getElementById('etq5');
+  var chips5=Array.prototype.slice.call(document.querySelectorAll('#comparador .comp-chip'));
+  function py5(d){ return OY5 - PY5*d; }
+  function pintaComp(k){
+    // línea hasta donde x tal que y=210 top-> usar t hasta que quepa; dibujamos hasta t=4.8 aprox
+    var tEnd=Math.min(5, (OY5-30)/(PY5*k)); // no pasar del tope
+    rayo5.setAttribute('x2', OX5+PX5*tEnd);
+    rayo5.setAttribute('y2', py5(k*tEnd));
+    unidad5.setAttribute('cy', py5(k));
+    guia5.setAttribute('y2', py5(k));
+    etq5.setAttribute('y', py5(k)-4);
+    etq5.textContent='(1, '+k+')';
+    chips5.forEach(function(c){ c.classList.toggle('sel', parseInt(c.dataset.k,10)===k); });
+  }
+  chips5.forEach(function(c){
+    c.addEventListener('click', function(){ pintaComp(parseInt(c.dataset.k,10)); });
+  });
+  pintaComp(3);
+
+  // ===== Tarjetas de veredicto (escena 7) =====
+  var iconOK='<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 10.5 l2.5 2.5 L14.5 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var iconNO='<svg class="ic" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 5 v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="15" r="1.2" fill="currentColor"/></svg>';
+  var tarjetas = Array.prototype.slice.call(document.querySelectorAll('#tarjetas [data-veredicto]'));
+  tarjetas.forEach(function(t){
+    t.addEventListener('click', function(){
+      if (t.classList.contains('abierta')) return;
+      var v=t.dataset.veredicto;
+      t.classList.add('abierta', v);
+      var etiqueta=t.querySelector('.veredicto');
+      if (etiqueta){
+        etiqueta.innerHTML=(v==='completa'? iconOK+'Proporcional' : iconNO+'No proporcional');
+      }
+    });
+  });
+  var resetTarjetas=document.getElementById('resetTarjetas');
+  if (resetTarjetas){
+    resetTarjetas.addEventListener('click', function(){
+      tarjetas.forEach(function(t){
+        t.classList.remove('abierta','falta','completa');
+        var lab=t.querySelector('.veredicto'); if(lab) lab.innerHTML='';
+      });
+    });
+  }
+
+  // ===== Reiniciar parada actual =====
+  btnReset.addEventListener('click', function(){
+    var e=escenas[actual];
+    // capas y listas
+    e.querySelectorAll('.capa').forEach(function(c){c.classList.remove('on');});
+    e.querySelectorAll('.lista-idea li').forEach(function(it){it.classList.remove('on');});
+    var btn=e.querySelector('.btn-revelar[data-target]');
+    if (btn){ btn.disabled=false; btn.dataset.paso='0'; btn.textContent=btn.getAttribute('data-label')||btn.textContent; }
+    // decisiones
+    e.querySelectorAll('.decision').forEach(function(g){
+      g.dataset.resuelto='';
+      g.querySelectorAll('.opcion').forEach(function(o){ o.classList.remove('resuelta','bien','mal'); });
+    });
+    // tarjetas
+    e.querySelectorAll('#tarjetas [data-veredicto]').forEach(function(t){
+      t.classList.remove('abierta','falta','completa');
+      var lab=t.querySelector('.veredicto'); if(lab) lab.innerHTML='';
+    });
+    // simulador
+    if (e.querySelector('.sim')){ simK=4; simT=0; pintaSim(); }
+    // comparador
+    if (e.querySelector('#comparador')){ pintaComp(3); }
+  });
+
+  // Guardar etiqueta original de botones revelar
+  document.querySelectorAll('.btn-revelar[data-target]').forEach(function(b){
+    b.setAttribute('data-label', b.textContent);
+  });
+
+  btnPrev.addEventListener('click', function(){ ir(actual-1); });
+  btnNext.addEventListener('click', function(){ ir(actual+1); });
+
+  // Teclado (evitar interferir al escribir; aquí no hay campos de texto)
+  document.addEventListener('keydown', function(ev){
+    if (ev.key==='ArrowRight'){ ir(actual+1); }
+    else if (ev.key==='ArrowLeft'){ ir(actual-1); }
+  });
+
+  // init
+  vistas[0]=true;
+  btnPrev.disabled=true;
+  btnReset.hidden=!tieneReiniciable(escenas[0]);
+  pintaRuta();
+})();
+</script>
+</body>
+</html>
